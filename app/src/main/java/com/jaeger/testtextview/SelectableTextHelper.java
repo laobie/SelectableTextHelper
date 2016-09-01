@@ -24,9 +24,9 @@ import android.widget.Toast;
  * Email: chjie.jaeger@gamil.com
  * GitHub: https://github.com/laobie
  */
-public class SelectableText {
+public class SelectableTextHelper {
 
-    private final static String TAG = SelectableText.class.getSimpleName();
+    private final static String TAG = SelectableTextHelper.class.getSimpleName();
 
     private final static int DEFAULT_SELECT_LENGTH = 1;
 
@@ -39,7 +39,7 @@ public class SelectableText {
     private Context mContext;
     private int mTouchX;
     private int mTouchY;
-
+    private int mSelectedColor = 0xFFAFE1F4;
     private SelectionInfo mSelectionInfo = new SelectionInfo();
 
     private OnSelectListener mSelectListener;
@@ -47,7 +47,7 @@ public class SelectableText {
     private Spannable mSpannable;
     private BackgroundColorSpan mSpan;
 
-    public SelectableText(TextView textView) {
+    public SelectableTextHelper(TextView textView) {
         mTextView = textView;
         mContext = mTextView.getContext();
         init();
@@ -62,6 +62,14 @@ public class SelectableText {
             }
         });
         //mTextView.getViewTreeObserver().
+        mTextView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    dismiss();
+                }
+            }
+        });
         mTextView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -154,7 +162,7 @@ public class SelectableText {
 
         if (mSpannable != null) {
             if (mSpan == null) {
-                mSpan = new BackgroundColorSpan(0xff38bcfd);
+                mSpan = new BackgroundColorSpan(mSelectedColor);
             }
             mSelectionInfo.mSelectionContent = mSpannable.subSequence(mSelectionInfo.mStart, mSelectionInfo.mEnd).toString();
             mSpannable.setSpan(mSpan, mSelectionInfo.mStart, mSelectionInfo.mEnd, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
@@ -183,8 +191,15 @@ public class SelectableText {
         private PopupWindow mWindow;
         private int[] mTempCoors = new int[2];
 
+        private int mWidth;
+        private int mHeight;
+
         public OperateWindow(final Context context) {
             View contentView = LayoutInflater.from(context).inflate(R.layout.layout_operate_windows, null);
+            contentView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            mWidth = contentView.getMeasuredWidth();
+            mHeight = contentView.getMeasuredHeight();
             mWindow =
                 new PopupWindow(contentView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
             mWindow.setClippingEnabled(false);
@@ -193,8 +208,8 @@ public class SelectableText {
                 @Override
                 public void onClick(View v) {
                     Toast.makeText(context, mSelectionInfo.mSelectionContent, Toast.LENGTH_SHORT).show();
-                    SelectableText.this.removeSelect();
-                    SelectableText.this.dismiss();
+                    SelectableTextHelper.this.removeSelect();
+                    SelectableTextHelper.this.dismiss();
                 }
             });
             contentView.findViewById(R.id.tv_select_all).setOnClickListener(new View.OnClickListener() {
@@ -209,12 +224,15 @@ public class SelectableText {
             mTextView.getLocationInWindow(mTempCoors);
             Layout layout = mTextView.getLayout();
             int posX = (int) layout.getPrimaryHorizontal(mSelectionInfo.mStart) + mTempCoors[0];
-            int posY = layout.getLineTop(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1] - 150;
-            L.d("fuck" + "posY is " + posY + " TextView top is ");
-            if (posX < 0) posX = 16;
+            int posY = layout.getLineTop(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1] - mHeight - 16;
+            L.d("fuck" + "pos x is " + posX);
+            L.d("fuck" + "posY is " + posY);
+            if (posX <= 0) posX = 16;
             if (posY < 0) posY = 16;
+            if (posX + mWidth > SelectUtil.getScreenWidth(mContext)) {
+                posX = SelectUtil.getScreenWidth(mContext) - mWidth - 16;
+            }
             mWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, posX, posY);
-            //mWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, posX, y + mTempCoors[1] - 150);
         }
 
         public void dismiss() {
@@ -235,7 +253,7 @@ public class SelectableText {
         private int mCircleSize = 35;
         private int mWidth = mCircleSize * 2;
         private int mHeight = mCircleSize * 2;
-        private int mPadding = 20;
+        private int mPadding = 25;
         private boolean isLeft;
 
         Path mPath = new Path();
@@ -247,7 +265,7 @@ public class SelectableText {
             this.isLeft = isLeft;
             mTextView = textView;
             mPaint = new Paint();
-            mPaint.setColor(0xff1278BD);
+            mPaint.setColor(0xFF1379D6);
 
             mPopupWindow = new PopupWindow(this);
             mPopupWindow.setClippingEnabled(false);

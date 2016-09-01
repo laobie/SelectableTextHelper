@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnTest;
     private View mLlRoot;
 
-    SelectableText mSelectableText;
+    SelectableTextHelper mSelectableText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mSelectableText = new SelectableText(mTvTest);
+        mSelectableText = new SelectableTextHelper(mTvTest);
         mSelectableText.setSelectListener(new OnSelectListener() {
             @Override
             public void onTextSelected(CharSequence content) {
@@ -44,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop() {
+    protected void onPause() {
         mSelectableText.destroy();
-        super.onStop();
+        super.onPause();
     }
 }

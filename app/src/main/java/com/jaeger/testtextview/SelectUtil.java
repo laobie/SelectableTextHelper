@@ -1,5 +1,6 @@
 package com.jaeger.testtextview;
 
+import android.content.Context;
 import android.text.Layout;
 import android.widget.TextView;
 
@@ -10,6 +11,11 @@ import android.widget.TextView;
  * GitHub: https://github.com/laobie
  */
 public class SelectUtil {
+
+    public static int getScreenWidth(Context context) {
+        return context.getResources().getDisplayMetrics().widthPixels;
+    }
+
     public static int getPreciseOffset(TextView textView, int x, int y) {
         Layout layout = textView.getLayout();
         if (layout != null) {
@@ -99,9 +105,6 @@ public class SelectUtil {
     }
 
     private static boolean isEndOfLineOffset(Layout layout, int offset) {
-        if (offset > 0) {
-            return layout.getLineForOffset(offset) == layout.getLineForOffset(offset - 1) + 1;
-        }
-        return false;
+        return offset > 0 && layout.getLineForOffset(offset) == layout.getLineForOffset(offset - 1) + 1;
     }
 }
