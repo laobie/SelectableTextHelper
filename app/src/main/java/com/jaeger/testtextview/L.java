@@ -11,7 +11,7 @@ import android.util.Log;
 public class L {
     private final static String TAG_DEBUG = "DEBUG";
 
-    public final static boolean IS_DEBUG = false;
+    public final static boolean IS_DEBUG = true;
 
     public static void d(String msg) {
         d(TAG_DEBUG, msg);

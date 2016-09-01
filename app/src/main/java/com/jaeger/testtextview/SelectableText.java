@@ -10,10 +10,13 @@ import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * Created by Jaeger on 16/8/30.
@@ -25,12 +28,14 @@ public class SelectableText {
 
     private final static String TAG = SelectableText.class.getSimpleName();
 
-    private final static int DEFAULT_SELECT_LENGTH = 6;
+    private final static int DEFAULT_SELECT_LENGTH = 1;
 
     private TextView mTextView;
 
     private CursorHandle mStartHandle;
     private CursorHandle mEndHandle;
+
+    private OperateWindow mOperateWindow;
     private Context mContext;
     private int mTouchX;
     private int mTouchY;
@@ -56,9 +61,17 @@ public class SelectableText {
                 return true;
             }
         });
+        //mTextView.getViewTreeObserver().
         mTextView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                //if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                //    dismiss();
+                //}
+                //if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
+                //    showCursor(mStartHandle, mSelectionInfo.mStart);
+                //    showCursor(mEndHandle, mSelectionInfo.mEnd);
+                //}
                 mTouchX = (int) event.getX();
                 mTouchY = (int) event.getY();
                 Log.d(TAG, "touch x is " + mTouchX + " touch y is " + mTouchY);
@@ -69,21 +82,25 @@ public class SelectableText {
         mTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                removeSelect();
                 if (mStartHandle != null && mEndHandle != null) {
                     dismiss();
                 }
             }
         });
+
+        mOperateWindow = new OperateWindow(mContext);
     }
 
     private void dismiss() {
-        removeSelect();
-        if (mStartHandle != null) {
-
+        if (mStartHandle != null && mStartHandle.isShowing()) {
             mStartHandle.dismiss();
         }
-        if (mEndHandle != null) {
+        if (mEndHandle != null && mEndHandle.isShowing()) {
             mEndHandle.dismiss();
+        }
+        if (mOperateWindow != null && mOperateWindow.isShowing()) {
+            mOperateWindow.dismiss();
         }
     }
 
@@ -95,36 +112,31 @@ public class SelectableText {
     }
 
     private void show(int x, int y) {
-        if (mStartHandle == null) {
-            mStartHandle = new CursorHandle(mTextView, CursorHandle.MODE_LEFT);
-        }
-        if (mEndHandle == null) {
-            mEndHandle = new CursorHandle(mTextView, CursorHandle.MODE_RIGHT);
-        }
-        if (mStartHandle.isShown()) {
-            mStartHandle.dismiss();
-        }
-        if (mEndHandle.isShown()) {
-            mEndHandle.dismiss();
-        }
+        if (mStartHandle == null) mStartHandle = new CursorHandle(mTextView, true);
+        if (mEndHandle == null) mEndHandle = new CursorHandle(mTextView, false);
+
+        dismiss();
         removeSelect();
 
         int startOffset = SelectUtil.getPreciseOffset(mTextView, x, y);
-
         int endOffset = startOffset + DEFAULT_SELECT_LENGTH;
-        showCursor(mStartHandle, startOffset);
-        showCursor(mEndHandle, endOffset);
+
+        showCursor(mStartHandle, startOffset, endOffset);
+        showCursor(mEndHandle, startOffset, endOffset);
+
         if (mTextView.getText() instanceof Spannable) {
             mSpannable = (Spannable) mTextView.getText();
         }
 
         selectText(startOffset, endOffset);
+
+        mOperateWindow.show();
     }
 
-    private void showCursor(CursorHandle cursorHandle, int startOffset) {
+    private void showCursor(CursorHandle cursorHandle, int startOffset, int endOffset) {
         Layout layout = mTextView.getLayout();
-        cursorHandle.show((int) layout.getPrimaryHorizontal(startOffset),
-            layout.getLineBottom(layout.getLineForOffset(startOffset)));
+        int offset = cursorHandle.isLeft ? startOffset : endOffset;
+        cursorHandle.show((int) layout.getPrimaryHorizontal(offset), layout.getLineBottom(layout.getLineForOffset(offset)));
     }
 
     private void selectText(int startPos, int endPos) {
@@ -142,10 +154,10 @@ public class SelectableText {
 
         if (mSpannable != null) {
             if (mSpan == null) {
-                mSpan = new BackgroundColorSpan(0x9900A9FF);
+                mSpan = new BackgroundColorSpan(0xff38bcfd);
             }
             mSelectionInfo.mSelectionContent = mSpannable.subSequence(mSelectionInfo.mStart, mSelectionInfo.mEnd).toString();
-            mSpannable.setSpan(mSpan, mSelectionInfo.mStart, mSelectionInfo.mEnd, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            mSpannable.setSpan(mSpan, mSelectionInfo.mStart, mSelectionInfo.mEnd, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
             if (mSelectListener != null) {
                 //mSelectListener.onTextSelected(mSpannable.subSequence(startPos, endPos));
             }
@@ -157,35 +169,85 @@ public class SelectableText {
     }
 
     public void destroy() {
+        removeSelect();
         dismiss();
         mStartHandle = null;
         mEndHandle = null;
+    }
+
+    /**
+     * Operate windows : copy, select all
+     */
+    class OperateWindow {
+
+        private PopupWindow mWindow;
+        private int[] mTempCoors = new int[2];
+
+        public OperateWindow(final Context context) {
+            View contentView = LayoutInflater.from(context).inflate(R.layout.layout_operate_windows, null);
+            mWindow =
+                new PopupWindow(contentView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+            mWindow.setClippingEnabled(false);
+
+            contentView.findViewById(R.id.tv_copy).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(context, mSelectionInfo.mSelectionContent, Toast.LENGTH_SHORT).show();
+                    SelectableText.this.removeSelect();
+                    SelectableText.this.dismiss();
+                }
+            });
+            contentView.findViewById(R.id.tv_select_all).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectText(0, mTextView.getText().length() - 1);
+                }
+            });
+        }
+
+        public void show() {
+            mTextView.getLocationInWindow(mTempCoors);
+            Layout layout = mTextView.getLayout();
+            int posX = (int) layout.getPrimaryHorizontal(mSelectionInfo.mStart) + mTempCoors[0];
+            int posY = layout.getLineTop(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1] - 150;
+            L.d("fuck" + "posY is " + posY + " TextView top is ");
+            if (posX < 0) posX = 16;
+            if (posY < 0) posY = 16;
+            mWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, posX, posY);
+            //mWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, posX, y + mTempCoors[1] - 150);
+        }
+
+        public void dismiss() {
+            if (mWindow.isShowing()) {
+                mWindow.dismiss();
+            }
+        }
+
+        public boolean isShowing() {
+            return mWindow.isShowing();
+        }
     }
 
     class CursorHandle extends View {
 
         private TextView mTextView;
         private PopupWindow mPopupWindow;
-        private int mWidth = 60;
-        private int mHeight = 60;
+        private int mCircleSize = 35;
+        private int mWidth = mCircleSize * 2;
+        private int mHeight = mCircleSize * 2;
         private int mPadding = 20;
-        private int mMode;
-        static final int MODE_LEFT = -1;
-        static final int MODE_RIGHT = 1;
+        private boolean isLeft;
 
         Path mPath = new Path();
         private Paint mPaint;
 
-        public CursorHandle(TextView textView, int mode) {
+        public CursorHandle(TextView textView, boolean isLeft) {
 
             super(textView.getContext());
-            mMode = mode;
+            this.isLeft = isLeft;
             mTextView = textView;
             mPaint = new Paint();
             mPaint.setColor(0xff1278BD);
-
-            //mWidth = 120;
-            //mHeight = 150;
 
             mPopupWindow = new PopupWindow(this);
             mPopupWindow.setClippingEnabled(false);
@@ -198,11 +260,11 @@ public class SelectableText {
         @Override
         protected void onDraw(Canvas canvas) {
             mPath.reset();
-            canvas.drawCircle(30 + mPadding, 30, 30, mPaint);
-            if (mMode == MODE_LEFT) {
-                canvas.drawRect(30 + mPadding, 0, 60 + mPadding, 30, mPaint);
+            canvas.drawCircle(mCircleSize + mPadding, mCircleSize, mCircleSize, mPaint);
+            if (isLeft) {
+                canvas.drawRect(mCircleSize + mPadding, 0, mCircleSize * 2 + mPadding, mCircleSize, mPaint);
             } else {
-                canvas.drawRect( mPadding, 0, 30 + mPadding, 30, mPaint);
+                canvas.drawRect(mPadding, 0, mCircleSize + mPadding, mCircleSize, mPaint);
             }
             //int startX = 60;
             //int offsetX = 100;
@@ -215,33 +277,37 @@ public class SelectableText {
         private int mAdjustX;
         private int mAdjustY;
 
+        private int mBeforeDragStart;
+        private int mBeforeDragEnd;
+
         @Override
         public boolean onTouchEvent(MotionEvent event) {
 
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    mBeforeDragStart = mSelectionInfo.mStart;
+                    mBeforeDragEnd = mSelectionInfo.mEnd;
                     mAdjustX = (int) event.getX();
                     mAdjustY = (int) event.getY();
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    mTextView.getLocationInWindow(mTempCoors);
-                    Layout layout = mTextView.getLayout();
-                    mStartHandle.mPopupWindow.update(
-                        (int) layout.getPrimaryHorizontal(mSelectionInfo.mStart) + mTempCoors[0] - mWidth - mPadding,
-                        layout.getLineBottom(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1], -1, -1);
-                    mEndHandle.mPopupWindow.update(
-                        (int) layout.getPrimaryHorizontal(mSelectionInfo.mEnd) + mTempCoors[0] - mPadding,
-                        layout.getLineBottom(layout.getLineForOffset(mSelectionInfo.mEnd)) + mTempCoors[1], -1, -1);
+                    mOperateWindow.show();
                     break;
                 case MotionEvent.ACTION_MOVE:
+                    mOperateWindow.dismiss();
                     int rawX = (int) event.getRawX();
                     int rawY = (int) event.getRawY();
                     L.d("Action move raw y is " + rawY);
-                    update(rawX + mAdjustX, rawY + mAdjustY);
+                    update(rawX + mAdjustX - mWidth, rawY + mAdjustY - mHeight);
                     break;
             }
             return true;
+        }
+
+        private void change() {
+            isLeft = !isLeft;
+            invalidate();
         }
 
         public void dismiss() {
@@ -252,30 +318,87 @@ public class SelectableText {
 
         public void update(int x, int y) {
             mTextView.getLocationInWindow(mTempCoors);
-            if (mMode == MODE_LEFT) {
-                mPopupWindow.update(x - mWidth, y, -1, -1);
+            int oldOffset;
+            if (isLeft) {
+                oldOffset = mSelectionInfo.mStart;
             } else {
-                mPopupWindow.update(x - mWidth / 2, y, -1, -1);
+                oldOffset = mSelectionInfo.mEnd;
             }
-            //int curOffset = mMode == MODE_LEFT ? -mPadding * 2 + mWidth : mWidth;
 
-            x += mTempCoors[0];
+            //x += mTempCoors[0] - mTextView.getPaddingLeft();
             y = y - mTempCoors[1];
-            int offset = SelectUtil.getPreciseOffset(mTextView, x, y);
 
-            removeSelect();
-            if (mMode == MODE_LEFT) {
-                selectText(offset, -1);
+            int offset = SelectUtil.getHysteresisOffset(mTextView, x, y, oldOffset);
+
+            if (offset != oldOffset) {
+                removeSelect();
+                if (isLeft) {
+                    if (offset > mBeforeDragEnd) {
+                        CursorHandle handle = getCursorHandle(false);
+                        change();
+                        handle.change();
+                        mBeforeDragStart = mBeforeDragEnd;
+                        selectText(mBeforeDragEnd, offset);
+
+                        handle.updateCursor();
+                    } else {
+                        selectText(offset, -1);
+                    }
+                    updateCursor();
+                } else {
+                    if (offset < mBeforeDragStart) {
+                        CursorHandle handle = getCursorHandle(true);
+                        handle.change();
+                        change();
+                        mBeforeDragEnd = mBeforeDragStart;
+                        selectText(offset, mBeforeDragStart);
+                        handle.updateCursor();
+                    } else {
+                        selectText(mBeforeDragStart, offset);
+                    }
+                    updateCursor();
+                }
+            }
+        }
+
+        private void updateCursor() {
+
+            mTextView.getLocationInWindow(mTempCoors);
+            Layout layout = mTextView.getLayout();
+            if (isLeft) {
+                mPopupWindow.update((int) layout.getPrimaryHorizontal(mSelectionInfo.mStart) - mWidth + getExtraX(),
+                    layout.getLineBottom(layout.getLineForOffset(mSelectionInfo.mStart)) + getExtraY(), -1, -1);
             } else {
-                selectText(-1, offset);
+                mPopupWindow.update((int) layout.getPrimaryHorizontal(mSelectionInfo.mEnd) + getExtraX(),
+                    layout.getLineBottom(layout.getLineForOffset(mSelectionInfo.mEnd)) + getExtraY(), -1, -1);
             }
         }
 
         public void show(int x, int y) {
             L.d("show x is " + x + " show y is " + y);
             mTextView.getLocationInWindow(mTempCoors);
-            int offset = mMode == MODE_LEFT ? mWidth : 0;
-            mPopupWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, mTempCoors[0] + x - offset - mPadding, mTempCoors[1] + y);
+            int offset = isLeft ? mWidth : 0;
+            mPopupWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, +x - offset + getExtraX(), y + getExtraY());
+        }
+
+        public int getExtraX() {
+            return mTempCoors[0] - mPadding + mTextView.getPaddingLeft();
+        }
+
+        public int getExtraY() {
+            return mTempCoors[1] + mTextView.getPaddingTop();
+        }
+
+        public boolean isShowing() {
+            return mPopupWindow.isShowing();
+        }
+    }
+
+    private CursorHandle getCursorHandle(boolean isLeft) {
+        if (mStartHandle.isLeft == isLeft) {
+            return mStartHandle;
+        } else {
+            return mEndHandle;
         }
     }
 }
