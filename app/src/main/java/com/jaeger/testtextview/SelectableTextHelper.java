@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * Created by Jaeger on 16/8/30.
@@ -207,7 +206,10 @@ public class SelectableTextHelper {
             contentView.findViewById(R.id.tv_copy).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Toast.makeText(context, mSelectionInfo.mSelectionContent, Toast.LENGTH_SHORT).show();
+                    if (mSelectListener != null) {
+                        mSelectListener.onTextSelected(mSelectionInfo.mSelectionContent);
+                    }
+                    //Toast.makeText(context, mSelectionInfo.mSelectionContent, Toast.LENGTH_SHORT).show();
                     SelectableTextHelper.this.removeSelect();
                     SelectableTextHelper.this.dismiss();
                 }
@@ -225,8 +227,8 @@ public class SelectableTextHelper {
             Layout layout = mTextView.getLayout();
             int posX = (int) layout.getPrimaryHorizontal(mSelectionInfo.mStart) + mTempCoors[0];
             int posY = layout.getLineTop(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1] - mHeight - 16;
-            L.d("fuck" + "pos x is " + posX);
-            L.d("fuck" + "posY is " + posY);
+            L.d("OperateWindow", "pos x is " + posX);
+            L.d("OperateWindow", "posY is " + posY);
             if (posX <= 0) posX = 16;
             if (posY < 0) posY = 16;
             if (posX + mWidth > SelectUtil.getScreenWidth(mContext)) {
