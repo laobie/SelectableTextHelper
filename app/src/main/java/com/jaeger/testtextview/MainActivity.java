@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
         btnTest = (Button) findViewById(R.id.btn_test);
         mLlRoot = findViewById(R.id.ll_root);
 
+        //mTvTest.setTextIsSelectable(true);
+
         mSelectableText = new SelectableTextHelper(mTvTest);
         mSelectableText.setSelectListener(new OnSelectListener() {
             @Override
@@ -39,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        mSelectableText.destroy();
+        //mSelectableText.destroy();
         super.onPause();
     }
 }

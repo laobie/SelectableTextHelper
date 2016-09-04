@@ -24,8 +24,6 @@ public class SelectUtil {
 
             int offsetX = (int) layout.getPrimaryHorizontal(offset);
 
-            L.d("SelectUtil", "offset  is " + offset);
-            L.d("SelectUtil", "x is " + x + " offsetX is " + offsetX);
             if (offsetX > x) {
                 return layout.getOffsetToLeftOf(offset);
             } else {
