@@ -273,7 +273,11 @@ public class SelectableTextHelper {
             contentView.findViewById(R.id.tv_select_all).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    hideSelect();
                     selectText(0, mTextView.getText().length() - 1);
+                    showCursor(mStartHandle);
+                    showCursor(mEndHandle);
+                    mOperateWindow.show();
                 }
             });
         }
