@@ -1,4 +1,4 @@
-package com.jaeger.selectabletexthelper;
+package com.jaeger.library;
 
 import android.content.Context;
 import android.text.Layout;

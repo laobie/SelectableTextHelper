@@ -1,12 +1,11 @@
 package com.jaeger.selectabletexthelper;
 
-import android.content.ClipData;
-import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import com.jaeger.library.OnSelectListener;
 import com.jaeger.library.SelectableTextHelper;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,20 +28,12 @@ public class MainActivity extends AppCompatActivity {
         //mTvTest.setTextIsSelectable(true);
 
         mSelectableText = new SelectableTextHelper(mTvTest);
-        mSelectableText.setSelectListener(new com.jaeger.selectabletexthelper.OnSelectListener() {
+        mSelectableText.setSelectListener(new OnSelectListener() {
             @Override
             public void onTextSelected(CharSequence content) {
-                android.content.ClipboardManager clip =
-                    (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                clip.setPrimaryClip(ClipData.newPlainText(content, content));
-                //Toast.makeText(MainActivity.this, content.toString(), Toast.LENGTH_SHORT).show();
+
+
             }
         });
-    }
-
-    @Override
-    protected void onPause() {
-        //mSelectableText.destroy();
-        super.onPause();
     }
 }

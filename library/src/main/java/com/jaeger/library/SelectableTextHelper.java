@@ -1,5 +1,7 @@
 package com.jaeger.library;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -28,13 +30,13 @@ public class SelectableTextHelper {
     private final static String TAG = SelectableTextHelper.class.getSimpleName();
 
     private final static int DEFAULT_SELECT_LENGTH = 1;
-    private static final int DEFAULT_SHOW_DURATION = 200;
+    private static final int DEFAULT_SHOW_DURATION = 100;
 
     private CursorHandle mStartHandle;
     private CursorHandle mEndHandle;
     private OperateWindow mOperateWindow;
-    private com.jaeger.selectabletexthelper.SelectionInfo mSelectionInfo = new com.jaeger.selectabletexthelper.SelectionInfo();
-    private com.jaeger.selectabletexthelper.OnSelectListener mSelectListener;
+    private SelectionInfo mSelectionInfo = new SelectionInfo();
+    private OnSelectListener mSelectListener;
 
     private Context mContext;
     private TextView mTextView;
@@ -180,7 +182,7 @@ public class SelectableTextHelper {
         if (mStartHandle == null) mStartHandle = new CursorHandle(mTextView, true);
         if (mEndHandle == null) mEndHandle = new CursorHandle(mTextView, false);
 
-        int startOffset = com.jaeger.selectabletexthelper.SelectUtil.getPreciseOffset(mTextView, x, y);
+        int startOffset = SelectUtil.getPreciseOffset(mTextView, x, y);
         int endOffset = startOffset + DEFAULT_SELECT_LENGTH;
         if (mTextView.getText() instanceof Spannable) {
             mSpannable = (Spannable) mTextView.getText();
@@ -223,7 +225,7 @@ public class SelectableTextHelper {
         }
     }
 
-    public void setSelectListener(com.jaeger.selectabletexthelper.OnSelectListener selectListener) {
+    public void setSelectListener(OnSelectListener selectListener) {
         mSelectListener = selectListener;
     }
 
@@ -258,10 +260,12 @@ public class SelectableTextHelper {
             contentView.findViewById(R.id.tv_copy).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    ClipboardManager clip = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                    clip.setPrimaryClip(
+                        ClipData.newPlainText(mSelectionInfo.mSelectionContent, mSelectionInfo.mSelectionContent));
                     if (mSelectListener != null) {
                         mSelectListener.onTextSelected(mSelectionInfo.mSelectionContent);
                     }
-                    //Toast.makeText(context, mSelectionInfo.mSelectionContent, Toast.LENGTH_SHORT).show();
                     SelectableTextHelper.this.removeSelect();
                     SelectableTextHelper.this.hideSelect();
                 }
@@ -281,8 +285,8 @@ public class SelectableTextHelper {
             int posY = layout.getLineTop(layout.getLineForOffset(mSelectionInfo.mStart)) + mTempCoors[1] - mHeight - 16;
             if (posX <= 0) posX = 16;
             if (posY < 0) posY = 16;
-            if (posX + mWidth > com.jaeger.selectabletexthelper.SelectUtil.getScreenWidth(mContext)) {
-                posX = com.jaeger.selectabletexthelper.SelectUtil.getScreenWidth(mContext) - mWidth - 16;
+            if (posX + mWidth > SelectUtil.getScreenWidth(mContext)) {
+                posX = SelectUtil.getScreenWidth(mContext) - mWidth - 16;
             }
             mWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, posX, posY);
         }
@@ -393,7 +397,7 @@ public class SelectableTextHelper {
             //x += mTempCoors[0] - mTextView.getPaddingLeft();
             y = y - mTempCoors[1];
 
-            int offset = com.jaeger.selectabletexthelper.SelectUtil.getHysteresisOffset(mTextView, x, y, oldOffset);
+            int offset = SelectUtil.getHysteresisOffset(mTextView, x, y, oldOffset);
 
             if (offset != oldOffset) {
                 removeSelect();
@@ -440,10 +444,12 @@ public class SelectableTextHelper {
         }
 
         public void show(int x, int y) {
-            com.jaeger.selectabletexthelper.L.d("show x is " + x + " show y is " + y);
             mTextView.getLocationInWindow(mTempCoors);
             int offset = isLeft ? mWidth : 0;
-            mPopupWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, +x - offset + getExtraX(), y + getExtraY());
+            if (isLeft) {
+                L.d("y is " + y + "extra y is " + getExtraY());
+            }
+            mPopupWindow.showAtLocation(mTextView, Gravity.NO_GRAVITY, x - offset + getExtraX(), y + getExtraY());
         }
 
         public int getExtraX() {
