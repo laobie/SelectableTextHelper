@@ -275,6 +275,7 @@ public class SelectableTextHelper {
                 public void onClick(View v) {
                     hideSelect();
                     selectText(0, mTextView.getText().length() - 1);
+                    isHide = false;
                     showCursor(mStartHandle);
                     showCursor(mEndHandle);
                     mOperateWindow.show();
