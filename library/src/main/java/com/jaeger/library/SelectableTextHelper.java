@@ -57,6 +57,7 @@ public class SelectableTextHelper {
     }
 
     private void init() {
+        mTextView.setText(mTextView.getText(), TextView.BufferType.SPANNABLE);
         mTextView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -187,6 +188,9 @@ public class SelectableTextHelper {
         if (mTextView.getText() instanceof Spannable) {
             mSpannable = (Spannable) mTextView.getText();
         }
+        if (mSpannable == null || startOffset >= mTextView.getText().length()) {
+            return;
+        }
         selectText(startOffset, endOffset);
         showCursor(mStartHandle);
         showCursor(mEndHandle);
@@ -274,7 +278,7 @@ public class SelectableTextHelper {
                 @Override
                 public void onClick(View v) {
                     hideSelect();
-                    selectText(0, mTextView.getText().length() - 1);
+                    selectText(0, mTextView.getText().length());
                     isHide = false;
                     showCursor(mStartHandle);
                     showCursor(mEndHandle);

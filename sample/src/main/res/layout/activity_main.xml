@@ -18,7 +18,7 @@
                 android:id="@+id/tv_test"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:bufferType="spannable"
+                android:layout_margin="16dp"
                 android:lineSpacingExtra="3dp"
                 android:text="@string/long_text"
                 android:textSize="16sp"/>
