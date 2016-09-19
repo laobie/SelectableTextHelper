@@ -65,7 +65,6 @@ public class SelectableTextHelper {
                 return true;
             }
         });
-        mTextView.setFocusableInTouchMode(true);
 
         mTextView.setOnTouchListener(new View.OnTouchListener() {
             @Override
