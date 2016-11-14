@@ -12,13 +12,6 @@
         android:text="@string/copy"
         style="@style/OperateTextView"/>
 
-    <View
-        android:layout_width="1dp"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="12dp"
-        android:layout_marginTop="12dp"
-        android:background="@color/gray"/>
-
     <TextView
         android:id="@+id/tv_select_all"
         android:text="@string/select_all"

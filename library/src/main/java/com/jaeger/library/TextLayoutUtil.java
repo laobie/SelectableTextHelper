@@ -7,10 +7,10 @@ import android.widget.TextView;
 /**
  * Created by Jaeger on 16/8/31.
  *
- * Email: chjie.jaeger@gamil.com
+ * Email: chjie.jaeger@gmail.com
  * GitHub: https://github.com/laobie
  */
-public class SelectUtil {
+public class TextLayoutUtil {
 
     public static int getScreenWidth(Context context) {
         return context.getResources().getDisplayMetrics().widthPixels;
@@ -104,5 +104,10 @@ public class SelectUtil {
 
     private static boolean isEndOfLineOffset(Layout layout, int offset) {
         return offset > 0 && layout.getLineForOffset(offset) == layout.getLineForOffset(offset - 1) + 1;
+    }
+
+    public static int dp2px(Context context, float dpValue) {
+        final float scale = context.getResources().getDisplayMetrics().density;
+        return (int) (dpValue * scale + 0.5f);
     }
 }
